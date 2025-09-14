@@ -1,40 +1,41 @@
-// pages/api/linear.js  — Next.js API (Edge runtime)
-export const config = {
-  runtime: 'edge',
-  // Pick regions Bybit doesn't block. Start with Tokyo + Frankfurt.
-  regions: ['hnd1', 'fra1']
-};
+// Next.js API (Edge) — Bybit v5 klines
+export const config = { runtime: 'edge', regions: ['hnd1','sin1','fra1'] };
 
 export default async function handler(req) {
   try {
     const { searchParams } = new URL(req.url);
-    const symbol   = searchParams.get('symbol');
-    const interval = searchParams.get('interval');
-    const from     = searchParams.get('from'); // epoch seconds
+    const symbol   = searchParams.get('symbol');   // e.g. BTCUSDT
+    const interval = searchParams.get('interval'); // 1,3,5,15,30,60,120,240,360,720,D,W,M
+    const fromSec  = searchParams.get('from');     // epoch seconds
 
-    if (!symbol || !interval || !from) {
-      return new Response(JSON.stringify({ error: 'Missing symbol/interval/from' }), {
+    if (!symbol || !interval || !fromSec) {
+      return new Response(JSON.stringify({ error: 'Missing symbol/interval/from (seconds)' }), {
         status: 400,
-        headers: { 'content-type': 'application/json; charset=utf-8', 'access-control-allow-origin': '*' }
+        headers: { 'content-type': 'application/json', 'access-control-allow-origin': '*' }
       });
     }
 
-    const url = new URL('https://api.bybit.com/public/linear/kline');
-    url.searchParams.set('symbol', symbol);
-    url.searchParams.set('interval', interval); // 1,3,5,15,30,60,120,240,360,720,D,W,M
-    url.searchParams.set('from', from);
+    // v5 requires milliseconds for start time
+    const startMs = String(Number(fromSec) * 1000);
 
-    const r = await fetch(url.toString(), { headers: { accept: 'application/json' }, cache: 'no-store' });
-    const body = await r.text();
+    const u = new URL('https://api.bybit.com/v5/market/kline');
+    u.searchParams.set('category', 'linear');
+    u.searchParams.set('symbol', symbol);
+    u.searchParams.set('interval', interval);
+    u.searchParams.set('start', startMs);
+    u.searchParams.set('limit', '1000'); // optional, but useful
 
-    return new Response(body, {
+    const r = await fetch(u.toString(), { headers: { accept: 'application/json' }, cache: 'no-store' });
+    const text = await r.text();
+
+    return new Response(text, {
       status: r.status,
-      headers: { 'content-type': 'application/json; charset=utf-8', 'access-control-allow-origin': '*' }
+      headers: { 'content-type': 'application/json', 'access-control-allow-origin': '*' }
     });
   } catch (e) {
     return new Response(JSON.stringify({ error: String(e) }), {
       status: 500,
-      headers: { 'content-type': 'application/json; charset=utf-8', 'access-control-allow-origin': '*' }
+      headers: { 'content-type': 'application/json', 'access-control-allow-origin': '*' }
     });
   }
 }
