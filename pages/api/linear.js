@@ -7,7 +7,7 @@ export default async function handler(req, res) {
     }
 
     const u = new URL("https://api.bybit.com/public/linear/kline");
-    u.searchParams.set("symbol", symbol);     // e.g., BTCUSDT
+    u.searchParams.set("symbol", symbol);     // e.g. BTCUSDT
     u.searchParams.set("interval", interval); // 1,3,5,15,30,60,120,240,360,720,D,W,M
     u.searchParams.set("from", from);         // epoch seconds
 
@@ -16,7 +16,7 @@ export default async function handler(req, res) {
       cache: "no-store"
     });
 
-    const text = await r.text(); // passthrough Bybit JSON
+    const text = await r.text();
     res.setHeader("access-control-allow-origin", "*");
     res.setHeader("content-type", "application/json; charset=utf-8");
     return res.status(r.status).send(text);
