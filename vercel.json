@@ -1,0 +1,8 @@
+{
+  "functions": {
+    "pages/api/**": {
+      "runtime": "nodejs22.x",
+      "regions": ["hnd1", "fra1"]
+    }
+  }
+}
